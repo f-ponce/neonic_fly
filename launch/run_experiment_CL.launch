@@ -1,0 +1,40 @@
+<launch>
+  <!-- ── Camera ── -->
+  <include file="$(find neonic_fly)/launch/kinefly_camera.launch"/>
+  <!-- ── Kinefly params ── -->
+  <param name="kinefly/parameterfile"       type="string" value="$(env HOME)/kinefly.yaml"/>
+  <param name="kinefly/filenameBackground"  type="string" value="$(env HOME)/kinefly.png"/>
+  <param name="kinefly/image_topic"         type="string" value="/camera/image_raw"/>
+  <param name="kinefly/n_queue_images"      type="int"    value="2"/>
+  <param name="kinefly/use_gui"             type="bool"   value="true"/>
+  <param name="kinefly/wingbeat_min"        type="double" value="180"/>
+  <param name="kinefly/wingbeat_max"        type="double" value="220"/>
+  <param name="kinefly/left/autozero"       type="bool"   value="true"/>
+  <param name="kinefly/left/threshold"      type="double" value="0.005"/>
+  <param name="kinefly/left/tracker"        type="string" value="edge"/>
+  <param name="kinefly/right/autozero"      type="bool"   value="true"/>
+  <param name="kinefly/right/threshold"     type="double" value="0.005"/>
+  <param name="kinefly/right/tracker"       type="string" value="edge"/>
+  <!-- ── Kinefly node ── -->
+  <node name="kinefly" pkg="Kinefly" type="kinefly.py" required="true"/>
+  <!-- ── Teensy serial node ── -->
+  <node name="teensy_serial" pkg="neonic_fly" type="teensy_serial.py" output="screen">
+    <param name="serial_port" value="/dev/ttyACM0"/>
+    <param name="baud_rate"   value="115200"/>
+  </node>
+  <!-- ── Closed-loop bridge ── -->
+  <node name="Flystate2Teensy" pkg="neonic_fly" type="flystate2teensy.py" output="screen"/>
+  <!-- ── Bag file logger ── -->
+  <node name="rosbag_record" pkg="rosbag" type="record"
+        args="-o /home/debivort-lab/work/neonic_fly_data/neonic_fly_cl
+              /camera/image_raw
+              /kinefly/flystate
+              /teensy/event
+              /teensy/command
+              /Flystate2Teensy/command
+              /rosout"
+        output="screen"/>
+  <!-- ── Experiment script — launches after 3s to let logger initialize ── -->
+  <node name="experiment_script_CL" pkg="neonic_fly" type="experiment_script_CL.py"
+        output="screen" launch-prefix="bash -c 'sleep 3 &amp;&amp; exec $0 $@' --"/>
+</launch>

@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- Teensy serial bridge -->
+  <node name="teensy_serial"
+        pkg="neonic_fly"
+        type="teensy_serial.py"
+        output="screen">
+    <param name="serial_port" value="/dev/ttyACM0"/>
+    <param name="baud_rate"   value="115200"/>
+  </node>
+
+  <!-- Closed-loop bridge: Kinefly flystate -> Teensy stripe velocity -->
+  <node name="Flystate2Teensy"
+        pkg="neonic_fly"
+        type="flystate2teensy.py"
+        output="screen"/>
+
+</launch>

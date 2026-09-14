@@ -1,0 +1,35 @@
+<launch>
+  <group ns="camera">
+    <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" cwd="node" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet"
+          args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager">
+      <param name="frame_id"                        value="camera"/>
+      <param name="serial"                          value="23476219"/>
+      <param name="device_type"                     value="USB3"/>
+      <!-- Framerate -->
+      <param name="acquisition_frame_rate_enable"   value="true"/>
+      <param name="acquisition_frame_rate"          value="30.0"/>
+      <!-- Format -->
+      <param name="isp_enable"                      value="false"/>
+      <param name="image_format_color_coding"       value="Mono8"/>
+      <!-- 4x binning + ROI -->
+      <param name="image_format_x_binning"          value="4"/>
+      <param name="image_format_y_binning"          value="4"/>
+      <param name="image_format_roi_width"          value="640"/>
+      <param name="image_format_roi_height"         value="480"/>
+      <param name="image_format_x_offset"           value="344"/>
+      <param name="image_format_y_offset"           value="336"/>
+      <!-- Exposure — fully manual -->
+      <param name="auto_exposure"                   value="Off"/>
+      <param name="ExposureAuto"                    value="Off"/>
+      <param name="exposure_time"                   value="6000"/>
+      <param name="exposure_auto"                   value="Off"/>
+      <!-- Gain — fully manual -->
+      <param name="auto_gain"                       value="Off"/>
+      <param name="GainAuto"                        value="Off"/>
+      <param name="gain"                            value="0.0"/>
+      <!-- Trigger -->
+      <param name="trigger_mode"                    value="Off"/>
+    </node>
+  </group>
+</launch>

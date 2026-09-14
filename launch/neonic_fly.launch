@@ -1,0 +1,23 @@
+<launch>
+    <!-- Camera -->
+    <include file="$(find neonic_fly)/launch/kinefly_camera.launch"/>
+
+    <!-- Kinefly params -->
+    <param name="kinefly/parameterfile"      type="string" value="$(env HOME)/kinefly.yaml"/>
+    <param name="kinefly/filenameBackground" type="string" value="$(env HOME)/kinefly.png"/>
+    <param name="kinefly/image_topic"        type="string" value="/camera/image_raw"/>
+    <param name="kinefly/n_queue_images"     type="int"    value="2"/>
+    <param name="kinefly/use_gui"            type="bool"   value="true"/>
+    <param name="kinefly/wingbeat_min"       type="double" value="180"/>
+    <param name="kinefly/wingbeat_max"       type="double" value="220"/>
+    <param name="kinefly/left/autozero"      type="bool"   value="true"/>
+    <param name="kinefly/left/threshold"     type="double" value="0.005"/>
+    <param name="kinefly/left/tracker"       type="string" value="edge"/>
+    <param name="kinefly/right/autozero"     type="bool"   value="true"/>
+    <param name="kinefly/right/threshold"    type="double" value="0.005"/>
+    <param name="kinefly/right/tracker"      type="string" value="edge"/>
+    <param name="kinefly/scale_image"      type="double"   value="1.0"/>
+
+    <!-- Kinefly node -->
+    <node name="kinefly" pkg="Kinefly" type="kinefly.py" required="true"/>
+</launch>
