@@ -26,41 +26,62 @@ def read_serial():
         except Exception as e:
             rospy.logerr(f"Serial read error: {e}")
 
+
+def _is_signed_float(s):
+    """True for '0', '123', '-5', '45.5', '-12.3', etc. (used to validate
+    S<speed> and P<position>, which the geometry-corrected .ino parses
+    with atof -- real degrees, decimals allowed)."""
+    if s.startswith('-'):
+        s = s[1:]
+    if s.count('.') > 1:
+        return False
+    s = s.replace('.', '', 1)
+    return len(s) > 0 and s.isdigit()
+
+
 def command_callback(msg):
     """Receive ROS command and send to Teensy.
 
-    Accepted formats
-    ----------------
-    '0' .. '5', '8', '9'   : immediate pattern commands
-                              (0 off, 1/2 stripes L/R, 3/4/5 loom,
-                               8/9 camo L/R)
-    'L' / 'M' / 'H'        : immediate stripe/camo speed select
-                              (slow / medium / fast)
-    'F'                    : immediate static (frozen) camo frame
-    'T' / 'C' / 'O'        : immediate hardware diagnostic test patterns
-                              (row test / static circle test / off-center test)
-    'P<NNN>'               : closed-loop stripe grid position, e.g. 'P096'
-    'Q<NNN>'               : closed-loop single-stripe position, e.g. 'Q096'
-                              (also used for a fixed/static single stripe)
-    'G<...>'               : live camo blotch tuning, e.g. 'G50,5,1,2,80'
-    'D<...>'               : live camo dot-overlay tuning, e.g. 'D50,1,1'
+    Accepted formats (matches patterns_091326_geometrycorrected.ino)
+    ------------------------------------------------------------------
+    '0' .. '9'         : immediate pattern select
+                          (0 off, 1 stripe grid, 2 single stripe,
+                           3/4/5 loom L/C/R paper-speed, 6/7/8 loom
+                           L/C/R previous-speed, 9 random rotating
+                           texture)
+    'N<number>'        : general pattern select, e.g. 'N10'..'N13'
+                          (diagnostics; also works for 0-9, same as
+                          sending the bare digit)
+    'S<signed number>' : set speed in REAL DEG/S for whichever movable
+                          pattern (1, 2, or 9) is currently selected.
+                          Positive/negative = direction, 0 = frozen.
+                          Decimals OK. e.g. 'S45.5', 'S-45.5', 'S0'
+    'P<number>'        : jump the current movable pattern (1, 2, or 9)
+                          to an absolute azimuthal position in REAL
+                          DEGREES, then motion continues from there.
+                          Decimals OK. e.g. 'P-12.3'
     All commands are sent to the Teensy with a trailing newline.
     """
     cmd = msg.data.strip()
     ros_time = rospy.Time.now().to_sec()
 
-    if cmd in ['0', '1', '2', '3', '4', '5', '8', '9', 'L', 'M', 'H', 'F', 'T', 'C', 'O']:
+    if cmd in [str(d) for d in range(10)]:
         rospy.loginfo(f"Sending command {cmd} at ROS_TIME={ros_time:.6f}")
         ser.write((cmd + '\n').encode())
 
-    elif len(cmd) == 4 and cmd[0] in ('P', 'Q') and cmd[1:].isdigit():
-        # Position command — send at debug level to avoid log spam at 100 Hz
-        rospy.loginfo(f"Sending position {cmd} at ROS_TIME={ros_time:.6f}")
+    elif len(cmd) > 1 and cmd[0] == 'N' and cmd[1:].isdigit():
+        rospy.loginfo(f"Sending pattern select {cmd} at ROS_TIME={ros_time:.6f}")
         ser.write((cmd + '\n').encode())
 
-    elif len(cmd) > 1 and cmd[0] in ('G', 'D'):
-        # Live camo tuning command — forward as-is, Teensy parses the rest.
-        rospy.loginfo(f"Sending camo tuning {cmd} at ROS_TIME={ros_time:.6f}")
+    elif len(cmd) > 1 and cmd[0] == 'S' and _is_signed_float(cmd[1:]):
+        # Speed command — send at info level rather than debug to keep
+        # visibility, but callers driving this at high rate (e.g. closed
+        # loop) should prefer batching/log sparingly upstream if it gets noisy.
+        rospy.loginfo(f"Sending speed {cmd} at ROS_TIME={ros_time:.6f}")
+        ser.write((cmd + '\n').encode())
+
+    elif len(cmd) > 1 and cmd[0] == 'P' and _is_signed_float(cmd[1:]):
+        rospy.loginfo(f"Sending position {cmd} at ROS_TIME={ros_time:.6f}")
         ser.write((cmd + '\n').encode())
 
     else:

@@ -29,6 +29,7 @@
 
   <!-- ── Closed-loop bridge ── -->
   <node name="Flystate2Teensy" pkg="neonic_fly" type="flystate2teensy.py" output="screen"/>
+  
 
   <!-- ── Bag file logger ── -->
   <node name="rosbag_record" pkg="rosbag" type="record"
@@ -42,7 +43,7 @@
         output="screen"/>
 
   <!-- ── Experiment script — launches after 3s to let logger initialize ── -->
-  <node name="experiment_script_082526" pkg="neonic_fly" type="experiment_script_082526.py"
+  <node name="experiment_script_091626" pkg="neonic_fly" type="experiment_script_091626.py"
         output="screen" launch-prefix="bash -c 'sleep 3 &amp;&amp; exec $0 $@' --"/>
 
 </launch>
